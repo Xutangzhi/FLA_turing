@@ -98,9 +98,31 @@ void turing::error(string s, int i)
                  << "error:delta's symbol not in G: " << s << endl;
         }
         break;
-    //
+    //输入为空
     case 11:
-
+        cerr << "illegal input!" << endl;
+        if (verbose)
+        {
+            cerr << errortag << endl
+                 << "error:the input is empty"<< endl;
+        }
+        break;
+    //输入不合法
+    case 12:
+        cerr << "illegal input!" << endl;
+        if (verbose)
+        {
+            char c = s[0];
+            int i = c-'0';
+            string st = s.substr(1,s.size()-1);
+            cerr << errortag << endl
+                 << "error: "<< st[i] <<"was not declared in the set of input symbols"<<endl
+                 <<"Input: "<<st<<endl
+                 <<"       ";
+                 for(int j=0;j<i;j++)
+                    cerr<<" ";
+                 cerr<<"^"<<endl;
+        }
         break;
     }
     cerr << endtag << endl;
@@ -202,6 +224,17 @@ bool turing::is_direction_legal(string s)
     }
     return true;
 }
+bool is_symbol_legal_char(char c)
+{
+    if (c >= 21 && c <= 126)
+    {
+        //',' 、';' 、'{' 、'}' 、'*' 、'_'
+        if (c == 44 || c == 59 || c == 123 || c == 125 || c == 95 || c == 42)
+            return false;
+        else
+            return true;
+    }
+}
 turing::turing(string fname, bool v)
 {
     filename = fname;
@@ -222,6 +255,7 @@ turing::turing(string fname, bool v)
                 continue;
             else if (line[0] == '#')
             {
+                //读出每行有效部分
                 string temp = findstring(line);
                 switch (line[1])
                 {
@@ -254,7 +288,7 @@ turing::turing(string fname, bool v)
                         for (int i = 0; i < v.size(); i++)
                         {
                             if (is_symbol_legal(v[i]))
-                                input_symbol.insert(v[i]);
+                                input_symbol.insert(v[i][0]);
                             else
                             {
                                 error(line, 3);
@@ -275,7 +309,7 @@ turing::turing(string fname, bool v)
                         for (int i = 0; i < v.size(); i++)
                         {
                             if (is_symbol_legal(v[i]))
-                                tape_symbol.insert(v[i]);
+                                tape_symbol.insert(v[i][0]);
                             else
                             {
                                 error(line, 3);
@@ -376,34 +410,61 @@ turing::turing(string fname, bool v)
             {
                 vector<string> v;
                 v = split(line, " ");
+                //是否与纸带数相同
+                if (v[1].size() != N || v[2].size() != N || v[3].size() != N)
+                    error(line, 5);
+                //是否由五部分组成
                 if (v.size() != 5)
                     error(line, 6);
+                //放在循环外判断状态是否在Q中
+                //if (state.count(v[0]) == 0 || state.count(v[4]) == 0)
+                //    error(line, 7);
 
-                if (state.count(v[0]) == 0 || state.count(v[4]) == 0)
-                    error(line, 7);
-
+                //判断符号组中符号是否合法
                 for (int i = 0; i < v[1].size(); i++)
-                    if (!is_symbol_legal(v[1][i]))
+                    if (!is_symbol_legal_char(v[1][i]))
                         error(line, 8);
-                for (int i = 0; i < v[1].size(); i++)
-                    if (!is_symbol_legal(v[2][i]))
+                for (int i = 0; i < v[2].size(); i++)
+                    if (!is_symbol_legal_char(v[2][i]))
                         error(line, 8);
 
                 if (!is_direction_legal(v[3]))
                     error(line, 9);
 
-                for (int i = 0; i < v[1].size(); i++)
-                    if (tape_symbol.count(v[1][i]) == 0)
-                        error(line, 10);
-                for (int i = 0; i < v[1].size(); i++)
-                    if (tape_symbol.count(v[2][i]) == 0)
-                        error(line, 10);
-
-                if (v[1].size() != N || v[2].size() != N || v[3].size() != N)
-                    error(line, 5);
+                //for (int i = 0; i < v[1].size(); i++)
+                //    if (tape_symbol.count(v[1][i]) == 0)
+                //        error(line, 10);
+                //for (int i = 0; i < v[2].size(); i++)
+                //    if (tape_symbol.count(v[2][i]) == 0)
+                //        error(line, 10);
 
                 delta d(v[0], v[1], v[2], v[3], v[4]);
                 deltafunc[v[0]].push_back(d);
+            }
+        }
+        map<string, vector<delta>>::iterator iter;
+        //判断新旧状态是否在Q中
+        for (iter = deltafunc.begin(); iter != deltafunc.end(); iter++)
+        {
+            vector<delta> value = iter->second;
+            for (int i = 0; i < value.size(); i++)
+            {
+                if (state.count(value[i].old_state) == 0 || state.count(value[i].new_state) == 0)
+                    error(line, 7);
+            }
+        }
+        //判断新旧符号组是否在G中
+        for (iter = deltafunc.begin(); iter != deltafunc.end(); iter++)
+        {
+            vector<delta> value = iter->second;
+            for (int i = 0; i < value.size(); i++)
+            {
+                for (int j = 0; j < value[i].old_symbol.size(); j++)
+                    if (tape_symbol.count(value[i].old_symbol[j]) == 0)
+                        error(line, 10);
+                for (int j = 0; j < value[i].new_symbol.size(); j++)
+                    if (tape_symbol.count(value[i].new_symbol[j]) == 0)
+                        error(line, 10);
             }
         }
     }
@@ -411,9 +472,31 @@ turing::turing(string fname, bool v)
 }
 void turing::run(string input)
 {
-    if(verbose)
+    if (verbose)
+        cout << "Input: " << input << endl;
+    //初始化tape
+    for(int i=0;i<N;i++)
     {
-        cout<<"Input: "<<input<<endl;
-        
+        list<unit> tape(1,unit(0,'_'));
+        tapes.push_back(tape);
+        heads.push_back(tapes[i].begin());
     }
+    //初始化第一条tape并检验合法
+    if(input!="")
+    {
+        tapes[0].clear();
+        for(int i=0;i<input.size();i++)
+        {
+            if(input_symbol.count(input[i])==0){
+                error(to_string(i)+input,12);
+            }
+            else{
+                tapes[0].push_back(unit(i, input[i]));
+            }
+        }
+    }
+    else{
+        error(input,11);
+    }
+    
 }

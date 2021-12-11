@@ -41,8 +41,8 @@ class turing
 private:
     //grammer
     set<string> state;                    //Q
-    set<string> input_symbol;             //S
-    set<string> tape_symbol;              //G
+    set<char> input_symbol;               //S
+    set<char> tape_symbol;                //G
     set<string> final_state;              //F
     string start_state;                   //q0
     char blank;                           //B
