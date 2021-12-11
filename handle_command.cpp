@@ -1,7 +1,7 @@
 #include "turing.h"
 
 const char *usage="usage: turing [-v|--verbose] [-h|--help] <tm> <i";
-const char *endtag = "==================== END ===============";
+const char *endtag1 = "==================== END ===============";
 
 int main(int argc, char **argv)
 {
@@ -12,6 +12,7 @@ int main(int argc, char **argv)
     if (argc == 1)
     {
         cout << usage << endl;
+        exit(0);
     }
     else
     {
@@ -24,7 +25,7 @@ int main(int argc, char **argv)
                 if (arg == "-h" || arg == "--help")
                 {
                     cout << usage << endl;
-                    break;
+                    exit(0);
                 }
                 else if (arg == "-v" || arg == "--verbose")
                 {
@@ -41,7 +42,9 @@ int main(int argc, char **argv)
             {
                 if (filename == "")
                 {
-                    if (arg[-1] == 'm' && arg[-2] == 't' && arg[-3] == '.')
+                    string argrev = arg;
+                    reverse(argrev.begin(),argrev.end());
+                    if (argrev[0] == 'm' && argrev[1] == 't' && argrev[2] == '.')
                         filename = arg;
                     else
                     {
@@ -61,12 +64,14 @@ int main(int argc, char **argv)
             }
         }
     }
+    
     turing tm(filename,verbose);
-    string res = tm.run(input);
+   cout<<1<<endl;
+    string res = tm.run(input); 
     if(verbose)
         cout << "Result: ";
     cout << res << endl;
     if(verbose)
-        cout <<endtag<< endl;
+        cout <<endtag1<< endl;
     return 0;
 }

@@ -7,6 +7,7 @@
 #include <map>
 #include <string.h>
 #include <sstream>
+#include <algorithm>
 using namespace std;
 
 struct delta
@@ -65,8 +66,10 @@ public:
     //func
     vector<string> split(string s, string c);
     string findstring(string s);
-    bool is_symbol_legal(string s);
+    bool is_symbol_legal_S(string s);
     bool is_state_legal(string s);
     bool is_direction_legal(string s);
-    void run(string input);
+    string run(string input);
+    string result();
+    void printtape(int step,string state);
 };

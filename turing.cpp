@@ -104,7 +104,7 @@ void turing::error(string s, int i)
         if (verbose)
         {
             cerr << errortag << endl
-                 << "error:the input is empty"<< endl;
+                 << "error:the input is empty" << endl;
         }
         break;
     //输入不合法
@@ -113,19 +113,20 @@ void turing::error(string s, int i)
         if (verbose)
         {
             char c = s[0];
-            int i = c-'0';
-            string st = s.substr(1,s.size()-1);
+            int i = c - '0';
+            string st = s.substr(1, s.size() - 1);
             cerr << errortag << endl
-                 << "error: "<< st[i] <<"was not declared in the set of input symbols"<<endl
-                 <<"Input: "<<st<<endl
-                 <<"       ";
-                 for(int j=0;j<i;j++)
-                    cerr<<" ";
-                 cerr<<"^"<<endl;
+                 << "error: " << st[i] << "was not declared in the set of input symbols" << endl
+                 << "Input: " << st << endl
+                 << "       ";
+            for (int j = 0; j < i; j++)
+                cerr << " ";
+            cerr << "^" << endl;
         }
         break;
     }
-    cerr << endtag << endl;
+    if (verbose)
+        cerr << endtag << endl;
     exit(i);
 }
 string turing::findstring(string s)
@@ -148,13 +149,13 @@ string turing::findstring(string s)
         return "";
     }
     //return {,,,}
-    else if (begin != string::npos && end != string::nops)
+    else if (begin != string::npos && end != string::npos)
     {
         string temp = s.substr(begin + 1, end - begin - 1);
         return temp;
     }
     //return q0 = 0
-    else if (begin == string::npos && end == string::nops)
+    else if (begin == string::npos && end == string::npos)
     {
         string temp = s.substr(last_space + 1, s.size() - last_space);
         return temp;
@@ -181,7 +182,7 @@ vector<string> turing::split(string s, string c)
         v.push_back(s.substr(pos1));
     return v;
 }
-bool turing::is_symbol_legal(string s)
+bool turing::is_symbol_legal_S(string s)
 {
     if (s.size() != 1)
         return false;
@@ -196,6 +197,27 @@ bool turing::is_symbol_legal(string s)
             else
                 return true;
         }
+        else
+            return false;
+    }
+}
+bool is_symbol_legal_G(string s)
+{
+    if (s.size() != 1)
+        return false;
+    else
+    {
+        int c = (int)s[0];
+        if (c >= 21 && c <= 126)
+        {
+            //',' 、';' 、'{' 、'}' 、'*'
+            if (c == 44 || c == 59 || c == 123 || c == 125 || c == 42)
+                return false;
+            else
+                return true;
+        }
+        else
+            return false;
     }
 }
 bool turing::is_state_legal(string s)
@@ -219,8 +241,11 @@ bool turing::is_direction_legal(string s)
 {
     for (int i = 0; i < s.size(); i++)
     {
-        if (s[i] != 'l' || s[i] != 'r' || s[i] != '*')
+        if (s[i] != 'l' && s[i] != 'r' && s[i] != '*')
+        {
+            cout << i;
             return false;
+        }
     }
     return true;
 }
@@ -228,12 +253,54 @@ bool is_symbol_legal_char(char c)
 {
     if (c >= 21 && c <= 126)
     {
-        //',' 、';' 、'{' 、'}' 、'*' 、'_'
-        if (c == 44 || c == 59 || c == 123 || c == 125 || c == 95 || c == 42)
+        //',' 、';' 、'{' 、'}' 、'*'
+        if (c == ' ' || c == ',' || c == ';' || c == '{' || c == '}' || c == '*')
             return false;
         else
             return true;
     }
+    else
+        return false;
+}
+string clean(string line)
+{
+    //删除行内注释
+    int tagindex = -1;
+    for (int i = 0; i < line.size(); i++)
+    {
+        if (line[i] == ';')
+        {
+            tagindex = i;
+            break;
+        }
+    }
+    //删除行末空格
+    int spaceindex = line.size() - 1;
+    if (tagindex == -1)
+    {
+        for (int i = line.size() - 1; i > 0; i--)
+        {
+            if (line[i] != ' ')
+            {
+                spaceindex = i;
+                break;
+            }
+        }
+    }
+    else
+    {
+        for (int i = tagindex - 1; i > 0; i--)
+        {
+            if (line[i] != ' ')
+            {
+                spaceindex = i;
+                break;
+            }
+        }
+    }
+    //返回删除后子串
+    string s = line.substr(0, spaceindex + 1);
+    return s;
 }
 turing::turing(string fname, bool v)
 {
@@ -248,15 +315,19 @@ turing::turing(string fname, bool v)
     else
     {
         string line = "";
+        int linec = 1;
         while (getline(f, line))
         {
-            //
-            if (line[0] == ';' || line[0] == ' ')
+            line = clean(line);
+            cout << linec << line << endl;
+            linec++;
+            if (line[0] == ';' || line == "")
                 continue;
             else if (line[0] == '#')
             {
                 //读出每行有效部分
                 string temp = findstring(line);
+                //cout<<temp<<endl;
                 switch (line[1])
                 {
                 case 'Q':
@@ -287,7 +358,7 @@ turing::turing(string fname, bool v)
                         v = split(temp, ",");
                         for (int i = 0; i < v.size(); i++)
                         {
-                            if (is_symbol_legal(v[i]))
+                            if (is_symbol_legal_S(v[i]))
                                 input_symbol.insert(v[i][0]);
                             else
                             {
@@ -308,7 +379,7 @@ turing::turing(string fname, bool v)
                         v = split(temp, ",");
                         for (int i = 0; i < v.size(); i++)
                         {
-                            if (is_symbol_legal(v[i]))
+                            if (is_symbol_legal_G(v[i]))
                                 tape_symbol.insert(v[i][0]);
                             else
                             {
@@ -410,6 +481,10 @@ turing::turing(string fname, bool v)
             {
                 vector<string> v;
                 v = split(line, " ");
+
+                for (int i = 0; i < v.size(); i++)
+                    cout << v[i] << ' ';
+
                 //是否与纸带数相同
                 if (v[1].size() != N || v[2].size() != N || v[3].size() != N)
                     error(line, 5);
@@ -423,7 +498,9 @@ turing::turing(string fname, bool v)
                 //判断符号组中符号是否合法
                 for (int i = 0; i < v[1].size(); i++)
                     if (!is_symbol_legal_char(v[1][i]))
+                    {
                         error(line, 8);
+                    }
                 for (int i = 0; i < v[2].size(); i++)
                     if (!is_symbol_legal_char(v[2][i]))
                         error(line, 8);
@@ -470,33 +547,176 @@ turing::turing(string fname, bool v)
     }
     f.close();
 }
-void turing::run(string input)
+string turing::run(string input)
 {
     if (verbose)
         cout << "Input: " << input << endl;
     //初始化tape
-    for(int i=0;i<N;i++)
+    for (int i = 0; i < N; i++)
     {
-        list<unit> tape(1,unit(0,'_'));
+        list<unit> tape(1, unit(0, '_'));
         tapes.push_back(tape);
         heads.push_back(tapes[i].begin());
     }
     //初始化第一条tape并检验合法
-    if(input!="")
+    if (input != "")
     {
         tapes[0].clear();
-        for(int i=0;i<input.size();i++)
+        for (int i = 0; i < input.size(); i++)
         {
-            if(input_symbol.count(input[i])==0){
-                error(to_string(i)+input,12);
+            if (input_symbol.count(input[i]) == 0)
+            {
+                error(to_string(i) + input, 12);
             }
-            else{
+            else
+            {
                 tapes[0].push_back(unit(i, input[i]));
             }
         }
     }
-    else{
-        error(input,11);
+    else
+    {
+        error(input, 11);
     }
-    
+    //开始进行运行
+    int step = 0;
+    string cur_state = start_state;
+    if (verbose)
+        cout << runtag << endl;
+    while (1)
+    {
+        //打印verbose信息
+        if (verbose)
+            printtape(step, cur_state);
+        //若在终止状态中则停止
+        if (final_state.count(cur_state) == 1)
+            return result();
+        //若找不到状态转移函数则停止
+        if (deltafunc.find(cur_state) == deltafunc.end())
+            return result();
+        //找到现符号组
+        string cur_symbols = "";
+        for (int i = 0; i < N; i++)
+        {
+            char ch = (*heads[i]).symbol;
+            cur_symbols += ch;
+        }
+        //找到对应的转移函数
+        vector<delta> tapen = deltafunc[cur_state];
+        int funcindex;
+        for (funcindex = 0; funcindex < tapen.size(); funcindex++)
+        {
+            if (tapen[funcindex].old_state == cur_state && tapen[funcindex].old_symbol == cur_symbols)
+                break;
+        }
+        //改变相应符号组
+        for (int i = 0; i < N; i++)
+        {
+            (*heads[i]).symbol = tapen[funcindex].new_symbol[i];
+            //移动纸带头
+            switch (tapen[funcindex].direction[i])
+            {
+            case 'l':
+                //如果最左边省略负号(后面再乘-1)
+                if (heads[i] == tapes[i].begin())
+                {
+                    tapes[i].push_front(unit((*heads[i]).index - 1, '_'));
+                    heads[i]--;
+                }
+                else
+                    heads[i]--;
+                break;
+            case 'r':
+                //如果最右边扩展
+                if (heads[i] == tapes[i].end())
+                {
+                    tapes[i].push_back(unit((*heads[i]).index + 1, '_'));
+                    heads[i]++;
+                }
+                else
+                    heads[i]++;
+                break;
+            case '*':
+                break;
+            default:
+                error(tapen[funcindex].direction, 9);
+                break;
+            }
+        }
+        //改变状态
+        cur_state = tapen[funcindex].new_state;
+        step++;
+    }
+}
+string turing::result()
+{
+    string res = "";
+    for (auto i = tapes[0].begin(); i != tapes[0].end(); i++)
+    {
+        char ch = (*i).symbol;
+        if (ch != blank)
+            res = res + ch;
+    }
+    return res;
+}
+void turing::printtape(int step, string cur_state)
+{
+    cout << "Step\t: " << step << endl;
+    //分别为每一行打印
+    string index = "";
+    string tape = "";
+    string head = "";
+    for (int i = 0; i < N; i++)
+    {
+        //找到打印的左右区间
+        /*int left = 0;
+        int right = tapes[i].size() - 1;
+        for (int j = 0; j < tapes[i].size(); j++)
+        {
+            if (tapes[i][j].symbol != '_')
+                break;
+            left++;
+        }
+        for (int j = tapes[i].size() - 1; j > left; j--)
+        {
+            if (tapes[i][j].symbol != '_')
+                break;
+            right--;
+        }*/
+        auto left = tapes[i].begin();
+        auto right = tapes[i].end()--;
+        for (auto iter = tapes[i].begin(); iter != tapes[i].end(); iter++)
+        {
+            if ((*iter).symbol != blank)
+                break;
+            left++;
+        }
+        for (auto iter = tapes[i].end(); iter != left; iter--)
+        {
+            if ((*iter).symbol != blank)
+                break;
+            right--;
+        }
+        //打印串
+        for (auto j = left; j != right; j++)
+        {
+            //index
+            if ((*j).index < 0)
+                (*j).index *= -1;
+            string indexstr = to_string((*j).index);
+            index = index + indexstr + " ";
+            //tape，与index左对齐
+            int num = indexstr.size();
+            tape = tape + (*j).symbol + string(num, ' ');
+            //head
+            if ((*j).index == (*heads[i]).index)
+                head = head + "^";
+            head = head + string(num + 1, ' ');
+        }
+        cout << "Index" << i << "\t: " << index << endl
+             << "Tape" << i << "\t: " << tape << endl
+             << "Head" << i << "\t: " << head << endl;
+    }
+    cout << "State\t: " + cur_state << endl
+         << "-------------------------------------------" << endl;
 }
