@@ -116,7 +116,7 @@ void turing::error(string s, int i)
             int i = c - '0';
             string st = s.substr(1, s.size() - 1);
             cerr << errortag << endl
-                 << "error: " << st[i] << "was not declared in the set of input symbols" << endl
+                 << "error: '" << st[i] << "' was not declared in the set of input symbols" << endl
                  << "Input: " << st << endl
                  << "       ";
             for (int j = 0; j < i; j++)
