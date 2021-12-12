@@ -66,8 +66,8 @@ int main(int argc, char **argv)
     }
     
     turing tm(filename,verbose);
-   cout<<1<<endl;
     string res = tm.run(input); 
+    //cout<<1<<endl;
     if(verbose)
         cout << "Result: ";
     cout << res << endl;

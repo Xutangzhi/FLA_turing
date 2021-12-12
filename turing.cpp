@@ -319,8 +319,8 @@ turing::turing(string fname, bool v)
         while (getline(f, line))
         {
             line = clean(line);
-            cout << linec << line << endl;
-            linec++;
+            //cout << linec << line << endl;
+            //linec++;
             if (line[0] == ';' || line == "")
                 continue;
             else if (line[0] == '#')
@@ -482,8 +482,8 @@ turing::turing(string fname, bool v)
                 vector<string> v;
                 v = split(line, " ");
 
-                for (int i = 0; i < v.size(); i++)
-                    cout << v[i] << ' ';
+                //for (int i = 0; i < v.size(); i++)
+                //    cout << v[i] << ' ';
 
                 //是否与纸带数相同
                 if (v[1].size() != N || v[2].size() != N || v[3].size() != N)
@@ -545,6 +545,36 @@ turing::turing(string fname, bool v)
             }
         }
     }
+    //输出调试
+    /*cout<<endl;
+    for(auto i = state.begin();i!=state.end();i++){
+        cout<<(*i)<<" ";
+    }
+    cout<<endl;
+    for(auto i = input_symbol.begin();i!=input_symbol.end();i++){
+        cout<<(*i)<<" ";
+    }
+    cout<<endl;
+    for(auto i = tape_symbol.begin();i!=tape_symbol.end();i++){
+        cout<<(*i)<<" ";
+    }
+    cout<<endl;
+    for(auto i = final_state.begin();i!=final_state.end();i++){
+        cout<<(*i)<<" ";
+    }
+    cout<<endl;
+    cout<<start_state;
+    cout<<endl;
+    cout<<blank;
+    cout<<endl;
+    cout<<N;
+    cout<<endl;
+    for(auto i = deltafunc.begin();i!=deltafunc.end();i++){
+        for(auto j = i->second.begin();j!=i->second.end();j++)
+        cout<<(*j).old_state<<" "<<(*j).old_symbol<<" "<<(*j).new_symbol<<" "
+            <<(*j).direction<<" "<<(*j).new_state<<endl;
+    }
+    */
     f.close();
 }
 string turing::run(string input)
@@ -573,6 +603,7 @@ string turing::run(string input)
                 tapes[0].push_back(unit(i, input[i]));
             }
         }
+        heads[0] = tapes[0].begin();
     }
     else
     {
@@ -601,14 +632,27 @@ string turing::run(string input)
             char ch = (*heads[i]).symbol;
             cur_symbols += ch;
         }
+        //cout<<cur_symbols<<endl;
         //找到对应的转移函数
         vector<delta> tapen = deltafunc[cur_state];
-        int funcindex;
-        for (funcindex = 0; funcindex < tapen.size(); funcindex++)
+        int funcindex = -1;
+        for (int i = 0; i < tapen.size(); i++)
         {
-            if (tapen[funcindex].old_state == cur_state && tapen[funcindex].old_symbol == cur_symbols)
+            if (tapen[i].old_state == cur_state && tapen[i].old_symbol == cur_symbols)
+            {
+                funcindex = i;
                 break;
+            }
         }
+        //找不到转移函数，停机
+        if (funcindex == -1)
+        {
+            return result();
+        }
+        //cout<<tapen[funcindex].old_state<<" "<<tapen[funcindex].old_symbol<<" "
+        //    <<tapen[funcindex].new_symbol<<" "<<tapen[funcindex].direction<<" "
+        //    <<tapen[funcindex].new_state<<endl;
+        //cout<<funcindex<<endl;
         //改变相应符号组
         for (int i = 0; i < N; i++)
         {
@@ -620,7 +664,7 @@ string turing::run(string input)
                 //如果最左边省略负号(后面再乘-1)
                 if (heads[i] == tapes[i].begin())
                 {
-                    tapes[i].push_front(unit((*heads[i]).index - 1, '_'));
+                    tapes[i].push_front(unit((*heads[i]).index - 1, blank));
                     heads[i]--;
                 }
                 else
@@ -628,9 +672,9 @@ string turing::run(string input)
                 break;
             case 'r':
                 //如果最右边扩展
-                if (heads[i] == tapes[i].end())
+                if (heads[i] == --tapes[i].end())
                 {
-                    tapes[i].push_back(unit((*heads[i]).index + 1, '_'));
+                    tapes[i].push_back(unit((*heads[i]).index + 1, blank));
                     heads[i]++;
                 }
                 else
@@ -642,6 +686,7 @@ string turing::run(string input)
                 error(tapen[funcindex].direction, 9);
                 break;
             }
+            //cout<<(*heads[i]).index<<endl;
         }
         //改变状态
         cur_state = tapen[funcindex].new_state;
@@ -662,12 +707,12 @@ string turing::result()
 void turing::printtape(int step, string cur_state)
 {
     cout << "Step\t: " << step << endl;
-    //分别为每一行打印
-    string index = "";
-    string tape = "";
-    string head = "";
     for (int i = 0; i < N; i++)
     {
+        //分别为每一行打印
+        string index = "";
+        string tape = "";
+        string head = "";
         //找到打印的左右区间
         /*int left = 0;
         int right = tapes[i].size() - 1;
@@ -684,33 +729,36 @@ void turing::printtape(int step, string cur_state)
             right--;
         }*/
         auto left = tapes[i].begin();
-        auto right = tapes[i].end()--;
-        for (auto iter = tapes[i].begin(); iter != tapes[i].end(); iter++)
+        auto right = tapes[i].end();
+        /**/
+        for (auto iter = tapes[i].begin(); iter != heads[i]; iter++)
         {
             if ((*iter).symbol != blank)
                 break;
             left++;
         }
-        for (auto iter = tapes[i].end(); iter != left; iter--)
+        for (auto iter = --tapes[i].end(); iter != heads[i]; iter--)
         {
             if ((*iter).symbol != blank)
                 break;
             right--;
         }
+        //cout << "left:" << (*left).index << (*left).symbol << "right:" << (*right).index << (*right).symbol << endl;
         //打印串
         for (auto j = left; j != right; j++)
         {
+            int indexj = (*j).index; 
             //index
             if ((*j).index < 0)
-                (*j).index *= -1;
-            string indexstr = to_string((*j).index);
+                indexj *= -1;
+            string indexstr = to_string(indexj);
             index = index + indexstr + " ";
             //tape，与index左对齐
             int num = indexstr.size();
             tape = tape + (*j).symbol + string(num, ' ');
             //head
             if ((*j).index == (*heads[i]).index)
-                head = head + "^";
+                head = head + '^';
             head = head + string(num + 1, ' ');
         }
         cout << "Index" << i << "\t: " << index << endl
