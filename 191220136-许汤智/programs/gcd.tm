@@ -2,14 +2,22 @@
 ;输入两个整数，我们用1的数量来表示输入的正整数，用0来分隔两个输入整数
 ;使用辗转相减法
 
+;状态集
 #Q = {q0,copy,error,error1,error2,error3,error4,halt_error,beginindex,find,accept_erase,halt_accept,recover,erase1,erase2}
+;输入符号集
 #S = {0,1}
+;纸带符号集
 #G = {0,1,_,e,r,o}
+;初始状态
 #q0 = q0
+;空格符号
 #B = _
+;终结状态集
 #F = {halt_error,halt_accept}
+;纸带数
 #N = 2
 
+;转移函数
 ;初始状态
 q0 1_ 1_ ** copy
 ;若第一个读到0，说明没有第一个数，错误
@@ -47,15 +55,15 @@ find 01 01 rl erase2
 ;a=b,进行接受前的处理
 find 00 00 ** accept_erase
 
-;b=b-a
+;b=b-a，删除第一条上a个1
 erase1 11 _1 rl erase1
 erase1 __ __ lr recover
 
-;a=a-b
+;a=a-b，删除第二条上b个1
 erase2 11 1_ rl erase2
 erase2 __ __ lr recover
 
-;将指针调整到原来位置
+;将指针调整到原来位置，然后重复操作辗转相减
 recover _1 _1 l* recover
 recover 1_ 1_ *r recover
 recover 11 11 ** find

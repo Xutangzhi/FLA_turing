@@ -747,8 +747,8 @@ void turing::printtape(int step, string cur_state)
         //打印串
         for (auto j = left; j != right; j++)
         {
-            int indexj = (*j).index; 
             //index
+            int indexj = (*j).index; 
             if ((*j).index < 0)
                 indexj *= -1;
             string indexstr = to_string(indexj);
